@@ -23,17 +23,24 @@ File myFile;
 
 Scheduler runner;
 
-void SENSOR_S(void *pvParameters );
-void PRINTER_S(void *pvParameters );
-void EPROM_SD(void *pvParameters );
-void SIMULATOR(void *pvParameters );
-void GPS(void *pvParameters);
+// void SENSOR_S(  );
+// void PRINTER_S(  );
+// void EPROM_SD(  );
+// void SIMULATOR(  );
+// void GPS( );
+void SENSOR_S(  );
+void PRINTER_S(  );
+void EPROM_SD(  );
+void SIMULATOR(  );
+void GPS( );
 
-Task task2(1000, TASK_FOREVER, &SENSOR_S, &runner);
-Task task3(1000, TASK_FOREVER, &PRINTER_S, &runner);
-Task task5(1000, TASK_FOREVER, &EPROM_SD, &runner);
-Task task6(1000, TASK_FOREVER, &SIMULATOR, &runner);
-Task task1(1000, TASK_FOREVER, &GPS, &runner);
+
+
+Task t2(1000, TASK_FOREVER, &SENSOR_S);
+Task t3(1000, TASK_FOREVER, &PRINTER_S );
+Task t5(1000, TASK_FOREVER, &EPROM_SD );
+Task t6(1000, TASK_FOREVER, &SIMULATOR );
+Task t1(1000, TASK_FOREVER, &GPS );
 
 unsigned long previousTime = 0;const long interval = 1000;unsigned long currentTime;
 extern unsigned long packetCount; extern bool tele_command, tele_calibration, tele_enable, tele_sim;extern float sim_press;
@@ -64,6 +71,12 @@ void setup() {
   ref = bmp.pressure/100.0;
   pinMode(5, OUTPUT);     //hanya tes program run atau tidak
   digitalWrite(5, HIGH);
+
+  runner.addTask(t1);
+  runner.addTask(t2);
+  runner.addTask(t3);
+  runner.addTask(t5);
+  runner.addTask(t6);
 
 
   // task1.enable();
@@ -104,8 +117,7 @@ void displayInfo() {
   }
 }
 
-void SENSOR_S (void *pvParameters) {
-  (void) pvParameters;  
+void SENSOR_S ( ) {
   mpu.update_sens();
   l_gforce = mpu.readGforce();
   while (1) {
@@ -176,8 +188,7 @@ void parsing() {
 }
 
 
-void SIMULATOR(void *pvParameters) {
-  (void) pvParameters;
+void SIMULATOR( ) {
   while (1) {
   /* Telemetry Format */
   telemetry().distort(altit,temp,press,value_pitch,value_roll,voltase,time[3],time[4],time[5],lat,lng,gps_altitude,gps_satelite);
@@ -196,8 +207,7 @@ void SIMULATOR(void *pvParameters) {
   }
 }
 
-void EPROM_SD (void *pvParameters) {   //*buat EEPROM butuh cara untuk avoid overwrite eeprom
-  (void) pvParameters;
+void EPROM_SD ( ) {   //*buat EEPROM butuh cara untuk avoid overwrite eeprom
   SD.begin(CS); //init SD card sesuai pin CS
   myFile = SD.open("1088.csv", FILE_WRITE);
   myFile.println("TeamID,Date,Count,Mode,State,Altitude,HS,PC,MAST,Temperature,Pressure,Voltage,DateGPS,AltiGPS,LAT,LNG,Satelite,TILTX,TILTY,ECHO");
@@ -213,8 +223,7 @@ void EPROM_SD (void *pvParameters) {   //*buat EEPROM butuh cara untuk avoid ove
   }
 }
 
-void GPS (void *pvParameters) {  //serial print buat semua sensor dkk (telemetrinya)
-  (void) pvParameters;
+void GPS ( ) {  //serial print buat semua sensor dkk (telemetrinya)
   while (1) {
   /*GPS READ*/
     // while(Serial3.available()>0) {    //kalo ada gps , baca 
@@ -231,8 +240,7 @@ void GPS (void *pvParameters) {  //serial print buat semua sensor dkk (telemetri
   }
 }
 
-void PRINTER_S (void *pvParameters) {  //serial print buat semua sensor dkk (telemetrinya)
-  (void) pvParameters;
+void PRINTER_S ( ) {  //serial print buat semua sensor dkk (telemetrinya)
   while (1) {
     /*GPS READ*/
     while(Serial3.available()>0) {    //kalo ada gps , baca 
