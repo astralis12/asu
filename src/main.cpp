@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
-//#include <FreeRTOS_TEENSY4.h>
 #include <Wire.h>
 #include <EEPROM.h>
 #include <SD.h>
@@ -9,10 +8,9 @@
 #include "bmp.h"
 #include "telemetry.h"
 #include "component.h"
-//#include <Scheduler.h>
 #include <TaskScheduler.h>
-//#define _TASK_SLEEP_ON_IDLE_RUN
 
+#define SerialD Serial
 #define CS 10
 #define xbee Serial2
 
@@ -21,28 +19,22 @@ bmp_read bmed;
 TinyGPSPlus gps;
 File myFile;
 
-Scheduler runner;
-
-// void SENSOR_S(  );
-// void PRINTER_S(  );
-// void EPROM_SD(  );
-// void SIMULATOR(  );
-// void GPS( );
-void SENSOR_S(  );
-void PRINTER_S(  );
-void EPROM_SD(  );
-void SIMULATOR(  );
-void GPS( );
+void SENSOR_S();
+void PRINTER_S();
+void EPROM_SD();
+void SIMULATOR();
+void GPS();
 
 
+Scheduler kontol;
 
-Task t2(1000, TASK_FOREVER, &SENSOR_S);
-Task t3(1000, TASK_FOREVER, &PRINTER_S );
-Task t5(1000, TASK_FOREVER, &EPROM_SD );
-Task t6(1000, TASK_FOREVER, &SIMULATOR );
-Task t1(1000, TASK_FOREVER, &GPS );
 
-unsigned long previousTime = 0;const long interval = 1000;unsigned long currentTime;
+Task t2(100, TASK_FOREVER, &SENSOR_S);
+// Task t3(1 * TASK_SECOND, TASK_FOREVER, &PRINTER_S, &kontol );
+// Task t5(1 * TASK_SECOND, TASK_FOREVER, &EPROM_SD, &kontol );
+// Task t6(1 * TASK_SECOND, TASK_FOREVER, &SIMULATOR, &kontol );
+// Task t1(1 * TASK_SECOND, TASK_FOREVER, &GPS, &kontol );
+
 extern unsigned long packetCount; extern bool tele_command, tele_calibration, tele_enable, tele_sim;extern float sim_press;
 float accelX,accelY,gForce,l_gforce,accelZ,value_roll,value_pitch,c,temp=0,press,altit,last_altit=0,ref,lat=0,lng=0,eprom,voltase=5.0,gps_altitude=0;    //MPU, BME, GPS, EEPROM
 int packet[3] = {0,0,0},time[7]={0,0,0,0,0,0,0},gps_satelite=0,timer_mil,paket_xbee=0,error; bool var_sim;    //GPS
@@ -53,7 +45,6 @@ int no=0,i,sensor_counter=0; int n ; String ayaya[100]; int k=0,state; String ha
 //Task TareaLED(500, TASK_FOREVER, &led_blink);
 
 void setup() {
-  currentTime = millis();
   Serial.begin(9600);
   while(!Serial){;}     //make sure program start after serial is open
   Serial3.begin(9600);
@@ -72,25 +63,31 @@ void setup() {
   pinMode(5, OUTPUT);     //hanya tes program run atau tidak
   digitalWrite(5, HIGH);
 
-  runner.addTask(t1);
-  runner.addTask(t2);
-  runner.addTask(t3);
-  runner.addTask(t5);
-  runner.addTask(t6);
+  // kontol.addTask(t1);
+  kontol.addTask(t2);
+  // kontol.addTask(t3);
+  // kontol.addTask(t5);
+  // kontol.addTask(t6);
 
 
-  // task1.enable();
-  // task2.enable();
-  // task3.enable();
-  // task6.enable();
-  // task5.enable();
-  runner.enableAll();
+  // t1.enable();
+  // t2.enable();
+  // t3.enable();
+  // t6.enable();
+  // t5.enable();
+  t2.enable();   
+  Serial.println("asu");
+
+
 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  runner.execute();
+  Serial.println("mieayam");
+  kontol.execute();
+  Serial.println("kontol");
+
 }
 
 void displayInfo() {
@@ -219,7 +216,7 @@ void EPROM_SD ( ) {   //*buat EEPROM butuh cara untuk avoid overwrite eeprom
   myFile.close();   //close notepad
   }                   //bisa buka file di SD card atau print di serial hasilnya
   delay(3000);
-  //vTaskDelay( 1000 / portTICK_PERIOD_MS );
+  //vTaskDelay( 1 * TASK_SECOND / portTICK_PERIOD_MS );
   }
 }
 
@@ -234,8 +231,8 @@ void GPS ( ) {  //serial print buat semua sensor dkk (telemetrinya)
     // while(!Serial3.available()) {
     //   vTaskDelay( 1 / portTICK_PERIOD_MS );
     // }
-  delay(1000);
-  //vTaskDelay( 1000 / portTICK_PERIOD_MS );
+  delay(1 * TASK_SECOND);
+  //vTaskDelay( 1 * TASK_SECOND / portTICK_PERIOD_MS );
   /*GPS READ END*/
   }
 }
@@ -249,8 +246,8 @@ void PRINTER_S ( ) {  //serial print buat semua sensor dkk (telemetrinya)
         mpu.update_sens();
         }
     }
-    if (currentTime - previousTime >= interval) {
-      previousTime = currentTime;
+    
+      
       if (tele=="") {;}
       else {
       Serial.println(tele);
@@ -259,5 +256,5 @@ void PRINTER_S ( ) {  //serial print buat semua sensor dkk (telemetrinya)
       }
       packetCount++;
       }
-    }
+    
 }
